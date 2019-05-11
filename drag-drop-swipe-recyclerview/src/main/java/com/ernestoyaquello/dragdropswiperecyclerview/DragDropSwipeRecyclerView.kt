@@ -14,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemDragListener
 import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemSwipeListener
+import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemClickListener
 import com.ernestoyaquello.dragdropswiperecyclerview.util.DragDropSwipeItemDecoration
 import android.os.Bundle
 
@@ -479,6 +480,19 @@ open class DragDropSwipeRecyclerView @JvmOverloads constructor(
 
                 // Pass down this listener to the adapter, which is where it will be used
                 adapter?.setInternalDragListener(value)
+            }
+        }
+
+    /**
+     * Listener for swiping events.
+     */
+    var clickListener: OnItemClickListener<*>? = null
+        set(value) {
+            if (value != field) {
+                field = value
+
+                // Pass down this listener to the adapter, which is where it will be used
+                adapter?.setInternalClickListener(value)
             }
         }
 

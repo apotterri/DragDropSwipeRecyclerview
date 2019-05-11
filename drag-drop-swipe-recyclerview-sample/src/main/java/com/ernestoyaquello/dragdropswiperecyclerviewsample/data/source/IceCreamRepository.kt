@@ -151,7 +151,7 @@ class IceCreamRepository : BaseRepository<IceCream>() {
             "Wine gum",
             "Yorkie")
 
-    override fun generateNewItem(): IceCream {
+    /*override */fun generateNewItem(): IceCream {
         val iceCreamName = generateIceCreamName()
         val iceCreamPrice = generateIceCreamPrice()
         val red = generateIceCreamBasicColor()

@@ -19,7 +19,9 @@ abstract class BaseRepository<T> {
 
     fun getAllItems() = items.toList()
 
-    abstract fun generateNewItem(): T
+    fun clear() = items.clear()
+
+    // abstract fun generateNewItem(): T
 
     fun addItem(item: T): Boolean {
         if (!items.contains(item)) {

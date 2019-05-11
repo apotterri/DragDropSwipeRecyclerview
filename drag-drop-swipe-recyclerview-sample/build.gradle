@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.ernestoyaquello.dragdropswiperecyclerviewsample"
-        minSdkVersion 19
+        minSdkVersion 26
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -19,6 +19,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+        dirs '../../spotify-web-api-android/spotify-api/build/outputs/aar'
+    }
+    // maven { url "https://jitpack.io" }
+    jcenter()
 }
 
 dependencies {
@@ -33,4 +43,10 @@ dependencies {
     implementation 'androidx.cardview:cardview:1.0.0'
 
     implementation project(path: ':drag-drop-swipe-recyclerview')
+    implementation project(':spotify-app-remote')
+    implementation project(':spotify-auth')
+    implementation (name: "spotify-web-api-android-0.4.1", ext: "aar")
+    implementation "com.squareup.retrofit:retrofit:1.9.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1"
+
 }

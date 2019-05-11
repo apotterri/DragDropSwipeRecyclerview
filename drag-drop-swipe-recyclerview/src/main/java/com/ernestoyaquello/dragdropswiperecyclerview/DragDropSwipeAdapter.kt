@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import com.ernestoyaquello.dragdropswiperecyclerview.DragDropSwipeRecyclerView.ListOrientation.DirectionFlag
 import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemDragListener
 import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemSwipeListener
+import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemClickListener
 import com.ernestoyaquello.dragdropswiperecyclerview.util.DragDropSwipeTouchHelper
 import com.ernestoyaquello.dragdropswiperecyclerview.util.drawHorizontalDividers
 import com.ernestoyaquello.dragdropswiperecyclerview.util.drawVerticalDividers
@@ -51,12 +52,21 @@ abstract class DragDropSwipeAdapter<T, U : DragDropSwipeAdapter.ViewHolder>(
      *
      * @param layout The layout of the corresponding list item.
      */
-    abstract class ViewHolder(layout: View) : RecyclerView.ViewHolder(layout) {
+    abstract class ViewHolder(layout: View) : RecyclerView.ViewHolder(layout), View.OnClickListener {
         internal var canBeDragged: (() -> Boolean)? = null
         internal var canBeDroppedOver: (() -> Boolean)? = null
         internal var canBeSwiped: (() -> Boolean)? = null
         internal var isBeingDragged = false
         internal var isBeingSwiped = false
+        internal var clickListener: (() -> Unit)? = null
+
+        init {
+            layout.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View?) {
+            clickListener?.invoke()
+        }
 
         private var _behindSwipedItemLayout: View? = null
         var behindSwipedItemLayout
@@ -262,10 +272,15 @@ abstract class DragDropSwipeAdapter<T, U : DragDropSwipeAdapter.ViewHolder>(
         // Do nothing in this method because it is up to the user of this library to implement or not
     }
 
+    protected open fun onClick(item: T) {
+        // Do nothing, user should implement if interested
+    }
+
     private var itemTouchHelper: ItemTouchHelper
 
     private var dragListener: OnItemDragListener<T>? = null
     private var swipeListener: OnItemSwipeListener<T>? = null
+    private var clickListener: OnItemClickListener<T>? = null
     internal val swipeAndDragHelper: DragDropSwipeTouchHelper
 
     @Suppress("UNCHECKED_CAST")
@@ -278,6 +293,12 @@ abstract class DragDropSwipeAdapter<T, U : DragDropSwipeAdapter.ViewHolder>(
     internal fun setInternalSwipeListener(listener: OnItemSwipeListener<*>?) {
         if (listener != null)
             swipeListener = listener as? OnItemSwipeListener<T>
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    internal fun setInternalClickListener(listener: OnItemClickListener<*>?) {
+        if (listener != null)
+            clickListener = listener as? OnItemClickListener<T>
     }
 
     private val itemDragListener = object : DragDropSwipeTouchHelper.OnItemDragListener {
@@ -398,6 +419,9 @@ abstract class DragDropSwipeAdapter<T, U : DragDropSwipeAdapter.ViewHolder>(
             else false
         }
 
+        holder.clickListener = {
+            onClick(item)
+        }
         holder.itemView.alpha = 1f
         holder.behindSwipedItemLayout = getBehindSwipedItemLayout(item, holder, position)
         holder.behindSwipedItemSecondaryLayout = getBehindSwipedItemSecondaryLayout(item, holder, position)

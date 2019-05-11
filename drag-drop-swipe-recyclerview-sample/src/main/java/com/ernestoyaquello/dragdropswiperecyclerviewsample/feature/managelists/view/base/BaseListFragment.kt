@@ -10,27 +10,31 @@ import com.ernestoyaquello.dragdropswiperecyclerview.DragDropSwipeRecyclerView
 import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemDragListener
 import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemSwipeListener
 import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnListScrollListener
+import com.ernestoyaquello.dragdropswiperecyclerview.listener.OnItemClickListener
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.R
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.config.local.ListFragmentType
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.config.local.currentListFragmentConfig
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.config.local.currentListFragmentType
-import com.ernestoyaquello.dragdropswiperecyclerviewsample.data.model.IceCream
-import com.ernestoyaquello.dragdropswiperecyclerviewsample.data.source.IceCreamRepository
+import com.ernestoyaquello.dragdropswiperecyclerviewsample.data.source.SpotifyQueue
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.data.source.base.BaseRepository
-import com.ernestoyaquello.dragdropswiperecyclerviewsample.feature.managelists.IceCreamListAdapter
+import com.ernestoyaquello.dragdropswiperecyclerviewsample.feature.managelists.TrackListAdapter
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.feature.managelists.view.GridListFragment
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.feature.managelists.view.HorizontalListFragment
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.feature.managelists.view.VerticalListFragment
 import com.ernestoyaquello.dragdropswiperecyclerviewsample.util.Logger
 import com.google.android.material.snackbar.Snackbar
 
+import com.spotify.android.appremote.api.SpotifyAppRemote
+
+import kaaes.spotify.webapi.android.models.TrackSimple
+
 /**
  * The base implementation of a fragment that displays a list of ice creams.
  */
 abstract class BaseListFragment : Fragment() {
 
-    private val adapter = IceCreamListAdapter()
-    private val repository = IceCreamRepository.getInstance()
+    private val adapter = TrackListAdapter()
+    private val repository = SpotifyQueue.getInstance()
 
     private lateinit var rootView: ViewGroup
     private lateinit var list: DragDropSwipeRecyclerView
@@ -39,8 +43,8 @@ abstract class BaseListFragment : Fragment() {
     protected abstract val fragmentLayoutId: Int
     protected abstract val optionsMenuId: Int
 
-    private val onItemSwipeListener = object : OnItemSwipeListener<IceCream> {
-        override fun onItemSwiped(position: Int, direction: OnItemSwipeListener.SwipeDirection, item: IceCream): Boolean {
+    private val onItemSwipeListener = object : OnItemSwipeListener<TrackSimple> {
+        override fun onItemSwiped(position: Int, direction: OnItemSwipeListener.SwipeDirection, item: TrackSimple): Boolean {
             when (direction) {
                 OnItemSwipeListener.SwipeDirection.RIGHT_TO_LEFT -> onItemSwipedLeft(item, position)
                 OnItemSwipeListener.SwipeDirection.LEFT_TO_RIGHT -> onItemSwipedRight(item, position)
@@ -52,12 +56,12 @@ abstract class BaseListFragment : Fragment() {
         }
     }
 
-    private val onItemDragListener = object : OnItemDragListener<IceCream> {
-        override fun onItemDragged(previousPosition: Int, newPosition: Int, item: IceCream) {
+    private val onItemDragListener = object : OnItemDragListener<TrackSimple> {
+        override fun onItemDragged(previousPosition: Int, newPosition: Int, item: TrackSimple) {
             Logger.log("$item is being dragged from position $previousPosition to position $newPosition")
         }
 
-        override fun onItemDropped(initialPosition: Int, finalPosition: Int, item: IceCream) {
+        override fun onItemDropped(initialPosition: Int, finalPosition: Int, item: TrackSimple) {
             if (initialPosition != finalPosition) {
                 Logger.log("$item moved (dragged from position $initialPosition and dropped in position $finalPosition)")
 
@@ -82,8 +86,14 @@ abstract class BaseListFragment : Fragment() {
         }
     }
 
-    private val onItemAddedListener = object : BaseRepository.OnItemAdditionListener<IceCream> {
-        override fun onItemAdded(item: IceCream, position: Int) {
+    private val onItemClickListener = object : OnItemClickListener<TrackSimple> {
+        override fun onItemClicked(item: TrackSimple) {
+            Logger.log("Item clicked $item")
+        }
+    }
+
+    private val onItemAddedListener = object : BaseRepository.OnItemAdditionListener<TrackSimple> {
+        override fun onItemAdded(item: TrackSimple, position: Int) {
             // Add the item to the adapter's data set if necessary
             if (!adapter.dataSet.contains(item)) {
                 Logger.log("Added new item $item")
@@ -94,6 +104,10 @@ abstract class BaseListFragment : Fragment() {
                 list.smoothScrollToPosition(position)
             }
         }
+    }
+
+    public fun setSpotifyRemote(remote: SpotifyAppRemote) {
+        adapter.setSpotifyAppRemote(remote)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -117,6 +131,7 @@ abstract class BaseListFragment : Fragment() {
         list.swipeListener = onItemSwipeListener
         list.dragListener = onItemDragListener
         list.scrollListener = onListScrollListener
+        list.clickListener = onItemClickListener
 
         // Finish list setup
         setupListLayoutManager(list)
@@ -142,6 +157,7 @@ abstract class BaseListFragment : Fragment() {
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item?.itemId) {
+            R.id.clear_queue -> repository.clear()
 
             R.id.change_item_layout ->
                 currentListFragmentConfig.isUsingStandardItemLayout = !currentListFragmentConfig.isUsingStandardItemLayout
@@ -251,43 +267,43 @@ abstract class BaseListFragment : Fragment() {
         adapter.dataSet = repository.getAllItems()
     }
 
-    private fun onItemSwipedLeft(item: IceCream, position: Int) {
+    private fun onItemSwipedLeft(item: TrackSimple, position: Int) {
         Logger.log("$item (position $position) swiped to the left")
 
         removeItem(item, position)
     }
 
-    private fun onItemSwipedRight(item: IceCream, position: Int) {
+    private fun onItemSwipedRight(item: TrackSimple, position: Int) {
         Logger.log("$item (position $position) swiped to the right")
 
         archiveItem(item, position)
     }
 
-    private fun onItemSwipedUp(item: IceCream, position: Int) {
+    private fun onItemSwipedUp(item: TrackSimple, position: Int) {
         Logger.log("$item (position $position) swiped up")
 
         archiveItem(item, position)
     }
 
-    private fun onItemSwipedDown(item: IceCream, position: Int) {
+    private fun onItemSwipedDown(item: TrackSimple, position: Int) {
         Logger.log("$item (position $position) swiped down")
 
         removeItem(item, position)
     }
 
-    private fun removeItem(item: IceCream, position: Int) {
+    private fun removeItem(item: TrackSimple, position: Int) {
         Logger.log("Removed item $item")
 
         removeItemFromList(item, position, R.string.itemRemovedMessage)
     }
 
-    private fun archiveItem(item: IceCream, position: Int) {
+    private fun archiveItem(item: TrackSimple, position: Int) {
         Logger.log("Archived item $item")
 
         removeItemFromList(item, position, R.string.itemArchivedMessage)
     }
 
-    private fun removeItemFromList(item: IceCream, position: Int, stringResourceId: Int) {
+    private fun removeItemFromList(item: TrackSimple, position: Int, stringResourceId: Int) {
         repository.removeItem(item)
 
         val itemSwipedSnackBar = Snackbar.make(rootView, getString(stringResourceId, item), Snackbar.LENGTH_SHORT)
